@@ -1,0 +1,68 @@
+{
+  "name": "opencode-cliproxiapi-auth",
+  "version": "1.0.0",
+  "description": "OpenCode authentication plugin for CLIProxyAPI with /connect command and dynamic model fetching",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./runtime": {
+      "import": "./dist/runtime.js",
+      "types": "./dist/runtime.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "node -e \"const fs=require('fs');if(fs.existsSync('dist'))fs.rmSync('dist',{recursive:true});\"",
+    "test": "npm run build && node --test test/models.test.mjs test/normalizer.test.mjs test/models-json.test.mjs test/models-dev.test.mjs test/logger.test.mjs test/plugin.test.mjs",
+    "test:integration": "npm run build && CLIPROXY_INTEGRATION=1 node --test test/integration.test.mjs",
+    "check:exports": "node --input-type=module -e \"import('./dist/index.js').then((m)=>{if(typeof m.default!=='function'){throw new Error('Default export must be a function');}for(const [key,value] of Object.entries(m)){if(typeof value!=='function'){throw new Error('Root export '+key+' must be a function to satisfy plugin loader constraints');}}})\"",
+    "prepublishOnly": "npm run clean && npm run build && npm run check:exports"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "auth",
+    "cliproxy",
+    "cliproxyapi",
+    "cli-proxy-api",
+    "authentication",
+    "api-key",
+    "connect",
+    "models"
+  ],
+  "author": "Ruslan Gainanov",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gromr1/opencode-cliproxiapi-auth.git"
+  },
+  "homepage": "https://github.com/gromr1/opencode-cliproxiapi-auth#readme",
+  "bugs": {
+    "url": "https://github.com/gromr1/opencode-cliproxiapi-auth/issues"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "peerDependencies": {
+    "@opencode-ai/plugin": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

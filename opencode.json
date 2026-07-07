@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    "file://./dist/index.js"
+  ],
+  "provider": {
+    "cliproxy": {
+      "options": {
+        "refreshOnList": true,
+        "modelsJsonPath": "https://raw.githubusercontent.com/router-for-me/CLIProxyAPI/refs/heads/main/internal/registry/models/models.json"
+      }
+    }
+  }
+}
