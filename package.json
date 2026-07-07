@@ -44,11 +44,11 @@
   "author": "Ruslan Gainanov",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gromr1/opencode-cliproxiapi-auth.git"
+    "url": "git+https://github.com/GRomR1/opencode-cliproxiapi-auth.git"
   },
-  "homepage": "https://github.com/gromr1/opencode-cliproxiapi-auth#readme",
+  "homepage": "https://github.com/GRomR1/opencode-cliproxiapi-auth#readme",
   "bugs": {
-    "url": "https://github.com/gromr1/opencode-cliproxiapi-auth/issues"
+    "url": "https://github.com/GRomR1/opencode-cliproxiapi-auth/issues"
   },
   "license": "MIT",
   "publishConfig": {

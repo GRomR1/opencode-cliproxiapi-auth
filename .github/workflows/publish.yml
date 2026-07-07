@@ -59,4 +59,7 @@ jobs:
           echo "Will publish $PKG (latest on npm: ${PUBLISHED:-none})"
 
       - name: Publish package (OIDC trusted publisher)
-        run: npm publish --access public
+        run: |
+          echo "node: $(node -v)"
+          echo "npm: $(npm -v)"
+          npm publish --access public --loglevel verbose

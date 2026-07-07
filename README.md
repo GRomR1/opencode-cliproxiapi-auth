@@ -256,14 +256,14 @@ Workflow: `.github/workflows/publish.yml` (triggers: tag `v*`, GitHub Release, m
 
 | Field | Value |
 |-------|-------|
-| Organization or user | `GRomR1` |
+| Organization or user | `GRomR1` (exact GitHub casing — npm is case-sensitive) |
 | Repository | `opencode-cliproxiapi-auth` |
 | Workflow filename | `publish.yml` |
 | Allowed actions | `npm publish` |
 
 5. Save. npm does not validate until the first publish attempt — double-check spelling.
 
-`package.json` → `repository.url` must point at the same GitHub repo (`git+https://github.com/gromr1/opencode-cliproxiapi-auth.git`).
+`package.json` → `repository.url` must use the same casing as GitHub (`git+https://github.com/GRomR1/opencode-cliproxiapi-auth.git`).
 
 Optional hardening after verified publish: package **Settings → Publishing access → Require 2FA and disallow tokens**, then revoke old automation tokens.
 
