@@ -24,9 +24,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           registry-url: https://registry.npmjs.org
-          cache: npm
+          cache: false
 
       - name: Verify tag matches package version
         if: github.event_name != 'workflow_dispatch'
@@ -49,12 +49,5 @@ jobs:
       - name: Unit tests
         run: npm test
 
-      - name: Verify npm authentication
-        run: npm whoami
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish package
-        run: npm publish --access public --loglevel verbose
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish package (OIDC trusted publisher)
+        run: npm publish --access public

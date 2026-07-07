@@ -238,8 +238,8 @@ Check logs under `~/.local/share/opencode/log/` (`service=cliproxy`).
 3. `npm run prepublishOnly` — must pass.
 4. `npm test` and optionally `npm run test:integration`.
 5. Push tag `vX.Y.Z` (must match `package.json` version).
-6. Publish **GitHub Release** for that tag — workflow `.github/workflows/publish.yml` runs `npm publish`.
+6. Push tag or run **Publish to npm** workflow — OIDC trusted publishing (no `NPM_TOKEN`).
 
-**CI:** `.github/workflows/ci.yml` on push/PR. **npm secret:** `NPM_TOKEN` in GitHub repo settings.
+**CI:** `.github/workflows/ci.yml` on push/PR. **npm:** configure [trusted publisher](https://docs.npmjs.com/trusted-publishers) for `GRomR1/opencode-cliproxiapi-auth` + workflow `publish.yml`.
 
 Package name: **`opencode-cliproxiapi-auth`**. Provider slug: **`cliproxy`**.

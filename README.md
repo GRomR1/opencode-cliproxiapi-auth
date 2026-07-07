@@ -243,19 +243,29 @@ npm run check:exports
 
 ## Publishing to npm
 
-Publishing is automated via GitHub Actions on [GitHub Release](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository) (`release: published`).
+Publishing uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers) (OIDC from GitHub Actions). **No `NPM_TOKEN` secret is required.**
 
-### One-time setup
+Workflow: `.github/workflows/publish.yml` (triggers: tag `v*`, GitHub Release, manual dispatch).
 
-1. **npm account** — register at [npmjs.com](https://www.npmjs.com/signup) if needed.
-2. **Claim package name** — ensure `opencode-cliproxiapi-auth` is free, or change `name` in `package.json`.
-3. **npm Automation token** — [npmjs.com](https://www.npmjs.com/) → Access Tokens → **Generate New Token** → type **Granular** or **Automation** (publish only, no 2FA prompt in CI).
-4. **GitHub repository** — push this repo to `https://github.com/router-for-me/opencode-cliproxiapi-auth` (or update `repository` in `package.json`).
-5. **GitHub secret** — repo **Settings → Secrets and variables → Actions → New repository secret**:
-   - Name: `NPM_TOKEN`
-   - Value: your npm token
+### One-time setup (npm trusted publisher)
 
-Optional: set `"author"` in `package.json` before the first release.
+1. Log in to [npmjs.com](https://www.npmjs.com/) as [gromr1](https://www.npmjs.com/~gromr1).
+2. Open package settings for `opencode-cliproxiapi-auth` (after first publish) **or** account publishing settings before the first release.
+3. Section **Trusted publishing** → **GitHub Actions**.
+4. Configure **exactly** (case-sensitive):
+
+| Field | Value |
+|-------|-------|
+| Organization or user | `GRomR1` |
+| Repository | `opencode-cliproxiapi-auth` |
+| Workflow filename | `publish.yml` |
+| Allowed actions | `npm publish` |
+
+5. Save. npm does not validate until the first publish attempt — double-check spelling.
+
+`package.json` → `repository.url` must point at the same GitHub repo (`git+https://github.com/gromr1/opencode-cliproxiapi-auth.git`).
+
+Optional hardening after verified publish: package **Settings → Publishing access → Require 2FA and disallow tokens**, then revoke old automation tokens.
 
 ### Release flow
 
@@ -264,11 +274,11 @@ Optional: set `"author"` in `package.json` before the first release.
 # 2. Commit, push, tag
 git tag v1.0.0
 git push origin v1.0.0
-
-# 3. GitHub → Releases → Draft new release → choose tag v1.0.0 → Publish release
 ```
 
-The `Publish to npm` workflow runs `npm test`, then `npm publish --provenance`. Tag `v1.0.0` must match `package.json` version `1.0.0`.
+Or: **Actions → Publish to npm → Run workflow** (branch `main`).
+
+The workflow runs `npm test`, then `npm publish` via OIDC. Provenance is added automatically for public repos. Requires npm CLI ≥ 11.5.1 (Node 24 in CI).
 
 ### Local dry run (no upload)
 
