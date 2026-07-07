@@ -1,9 +1,13 @@
 name: Publish to npm
 
 on:
+  push:
+    tags:
+      - 'v*'
   release:
     types:
       - published
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -24,9 +28,13 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: npm
 
-      - name: Verify release tag matches package version
+      - name: Verify tag matches package version
         run: |
-          TAG="${{ github.event.release.tag_name }}"
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
           TAG="${TAG#v}"
           PKG="$(node -p "require('./package.json').version")"
           if [ "$TAG" != "$PKG" ]; then
