@@ -236,7 +236,7 @@ Check logs under `~/.local/share/opencode/log/` (`service=cliproxy`).
 ## Release Checklist
 
 1. Bump `package.json` version (must be **new** — npm rejects already-published versions).
-2. Update `CHANGELOG.md` (if present).
+2. Update `CHANGELOG.md`.
 3. `npm run prepublishOnly` — must pass.
 4. `npm test` and optionally `npm run test:integration`.
 5. Push tag `vX.Y.Z` (must match `package.json` version, e.g. `v1.0.2` ↔ `1.0.2`).
