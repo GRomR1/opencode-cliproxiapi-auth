@@ -49,5 +49,15 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Check version is not already on npm
+        run: |
+          PKG="$(node -p "require('./package.json').version")"
+          PUBLISHED="$(npm view opencode-cliproxiapi-auth version 2>/dev/null || true)"
+          if [ "$PUBLISHED" = "$PKG" ]; then
+            echo "Version $PKG is already published on npm — bump package.json first"
+            exit 1
+          fi
+          echo "Will publish $PKG (latest on npm: ${PUBLISHED:-none})"
+
       - name: Publish package (OIDC trusted publisher)
         run: npm publish --access public
