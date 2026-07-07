@@ -21,12 +21,14 @@ Connect OpenCode to a running CLIProxyAPI instance (local or remote), authentica
 ## Requirements
 
 - [OpenCode](https://opencode.ai) ≥ 1.14.49 recommended (provider hook for dynamic models)
-- Node.js ≥ 20
+- Node.js ≥ 22.14 (npm trusted publishing); CI uses Node 24
 - Running [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) (default port `8317`)
 
 ## Installation
 
-### From npm (after publish)
+### From npm
+
+Published: [opencode-cliproxiapi-auth](https://www.npmjs.com/package/opencode-cliproxiapi-auth)
 
 ```bash
 npm install opencode-cliproxiapi-auth
@@ -40,10 +42,10 @@ Add to `opencode.json`:
 }
 ```
 
-### Local development (before publish)
+### Local development
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/GRomR1/opencode-cliproxiapi-auth.git
 cd opencode-cliproxiapi-auth
 npm install
 npm run build
@@ -270,21 +272,23 @@ Optional hardening after verified publish: package **Settings → Publishing acc
 ### Release flow
 
 ```bash
-# 1. Bump version in package.json (e.g. 1.0.1)
-# 2. Commit, push, tag
-git tag v1.0.0
-git push origin v1.0.0
+# 1. Bump version in package.json (must be higher than npm latest)
+# 2. Commit, push, tag (tag must match version: v1.0.2 ↔ 1.0.2)
+git tag v1.0.2
+git push origin v1.0.2
 ```
 
 Or: **Actions → Publish to npm → Run workflow** (branch `main`).
 
-The workflow runs `npm test`, then `npm publish` via OIDC. Provenance is added automatically for public repos. Requires npm CLI ≥ 11.5.1 (Node 24 in CI).
+CI uses `actions/checkout@v6`, `actions/setup-node@v6`, Node 24. The workflow runs `npm test`, checks the version is not already on npm, then `npm publish` via OIDC. Provenance is added automatically for public repos.
+
+**Do not re-publish an existing version** — npm rejects duplicate versions; bump `package.json` first.
 
 ### Local dry run (no upload)
 
 ```bash
 npm pack
-tar -tf opencode-cliproxiapi-auth-1.0.0.tgz
+tar -tf opencode-cliproxiapi-auth-*.tgz
 ```
 
 ### Integration tests (live CLIProxyAPI)
@@ -326,7 +330,7 @@ Logs: `~/.local/share/opencode/log/` (lines tagged `service=cliproxy`).
 - Ensure plugin is in `opencode.json` `plugin` array.
 - Run `npm run build` if using `file://./dist/index.js`.
 - Do **not** use `opencode --pure` (skips external plugins).
-- Unpublished package: use `file://` path, not npm package name.
+- For plugin development from source: use `file://` path to `dist/index.js`.
 
 ### No models / connection failed
 

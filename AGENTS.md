@@ -53,6 +53,8 @@ cp .env.example .env
 
 Integration tests load `.env` via `test/load-env.mjs` and only run when `CLIPROXY_INTEGRATION=1`.
 
+No `NPM_TOKEN` GitHub secret — npm publish uses [trusted publishing](https://docs.npmjs.com/trusted-publishers) (OIDC).
+
 ## Architecture
 
 ### Dual Entry Points
@@ -233,13 +235,25 @@ Check logs under `~/.local/share/opencode/log/` (`service=cliproxy`).
 
 ## Release Checklist
 
-1. Bump `package.json` version.
+1. Bump `package.json` version (must be **new** — npm rejects already-published versions).
 2. Update `CHANGELOG.md` (if present).
 3. `npm run prepublishOnly` — must pass.
 4. `npm test` and optionally `npm run test:integration`.
-5. Push tag `vX.Y.Z` (must match `package.json` version).
-6. Push tag or run **Publish to npm** workflow — OIDC trusted publishing (no `NPM_TOKEN`).
+5. Push tag `vX.Y.Z` (must match `package.json` version, e.g. `v1.0.2` ↔ `1.0.2`).
+6. Tag push triggers **Publish to npm** (`.github/workflows/publish.yml`), or run workflow manually on `main`.
 
-**CI:** `.github/workflows/ci.yml` on push/PR. **npm:** configure [trusted publisher](https://docs.npmjs.com/trusted-publishers) for `GRomR1/opencode-cliproxiapi-auth` + workflow `publish.yml`.
+### npm trusted publishing
+
+| Setting | Value |
+|---------|-------|
+| npm package | [opencode-cliproxiapi-auth](https://www.npmjs.com/package/opencode-cliproxiapi-auth) |
+| GitHub user | `GRomR1` (**case-sensitive** — not `gromr1`) |
+| Repository | `opencode-cliproxiapi-auth` |
+| Workflow file | `publish.yml` |
+| Allowed action | `npm publish` |
+
+`package.json` → `repository.url` must use `GRomR1` casing. CI/publish: Node 24, `checkout@v6`, `setup-node@v6`.
+
+**CI:** `.github/workflows/ci.yml` on push/PR.
 
 Package name: **`opencode-cliproxiapi-auth`**. Provider slug: **`cliproxy`**.
