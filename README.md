@@ -7,8 +7,9 @@ Connect OpenCode to a running CLIProxyAPI instance (local or remote), authentica
 ## Features
 
 - **`/connect cliproxy`** — interactive setup (base URL + optional API key)
-- **Provider `cliproxy`** — auto-registered with full model list
+- **Configurable provider ID** — defaults to `cliproxy` for backwards compatibility
 - **Dynamic models** — fetched from CLIProxyAPI `/v1/models` with TTL cache
+- **Server-authoritative rich catalog** — optional `client_version` catalog with exact capabilities and reasoning levels
 - **models.json enrichment** — defaults to CLIProxyAPI registry URL; override with local path or custom URL
 - **models.dev enrichment** — fills missing metadata (graceful fallback)
 - **Auth-aware base URL** — `/connect cliproxy` base URL used when `opencode.json` omits `baseURL`
@@ -110,15 +111,18 @@ Optional settings in `opencode.json`:
 
 ```json
 {
-  "plugin": ["opencode-cliproxiapi-auth"],
+  "plugin": [["opencode-cliproxiapi-auth", { "providerId": "cliproxyapi" }]],
   "provider": {
-    "cliproxy": {
+    "cliproxyapi": {
       "options": {
         "baseURL": "http://localhost:8317/v1",
         "apiKey": "your-key-from-config.yaml",
         "modelCacheTtl": 300000,
         "refreshOnList": true,
-        "modelsDev": { "enabled": true }
+        "modelsClientVersion": "0.144.1",
+        "fabricatedFallback": false,
+        "modelsJsonPath": "",
+        "modelsDev": { "enabled": false }
       }
     }
   }
@@ -159,10 +163,13 @@ Enrichment mapping:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `baseURL` | string | `http://localhost:8317/v1` | CLIProxyAPI base URL; falls back to `/connect cliproxy` stored URL |
+| `providerId` | string | `cliproxy` | Provider/auth namespace configured in the plugin tuple |
+| `baseURL` | string | `http://localhost:8317/v1` | CLIProxyAPI base URL; falls back to the stored `/connect <providerId>` URL |
 | `apiKey` | string | — | Key from `config.yaml` `api-keys` (optional) |
 | `modelCacheTtl` | number | `300000` | Model cache TTL (ms) |
 | `refreshOnList` | boolean | `true` | Refresh models when provider options reload |
+| `modelsClientVersion` | string | — | Adds `client_version` to `/v1/models` and parses the server's rich `models` catalog |
+| `fabricatedFallback` | boolean | `true` | Set `false` to return no invented built-in models when no live/stale catalog exists |
 | `modelsJsonPath` | string | CLIProxyAPI GitHub `models.json` | Local path or URL; `""` disables enrichment |
 | `modelsDev.enabled` | boolean | `true` | Enrich from models.dev |
 | `modelsDev.url` | string | `https://models.dev/api.json` | models.dev API URL |

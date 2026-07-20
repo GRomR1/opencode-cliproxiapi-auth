@@ -34,16 +34,20 @@ interface ParsedAuth {
   baseUrl?: string;
 }
 
-export const CliproxyAuthPlugin: Plugin = async (_input) => {
+export const CliproxyAuthPlugin: Plugin = async (_input, pluginOptions) => {
+  const providerId = getProviderId(pluginOptions);
+
   return {
     config: async (config) => {
       const providers = config.provider ?? {};
-      const existing = providers[CLIPROXY_PROVIDER_ID];
-      const auth = await readAuthFromStore(CLIPROXY_PROVIDER_ID);
+      const existing = providers[providerId];
+      const auth = await readAuthFromStore(providerId);
       const parsed = parseAuthKey(auth?.key);
       const baseUrl = getBaseUrl(existing?.options, parsed.baseUrl);
 
-      let models: CliproxyModel[] = CLIPROXY_DEFAULT_MODELS;
+      let models: CliproxyModel[] = usesFabricatedFallback(existing?.options)
+        ? CLIPROXY_DEFAULT_MODELS
+        : [];
       try {
         const apiKey = resolveApiKey(existing?.options, parsed);
         const runtimeConfig = createRuntimeConfig(
@@ -53,11 +57,11 @@ export const CliproxyAuthPlugin: Plugin = async (_input) => {
         );
         models = await fetchModels(runtimeConfig, false);
       } catch (error) {
-        warn(`Eager model fetch failed, using defaults: ${formatErrorForLog(error)}`);
+        warn(`Eager model fetch failed: ${formatErrorForLog(error)}`);
       }
 
       const shouldRefresh = shouldRefreshProviderModels(existing);
-      providers[CLIPROXY_PROVIDER_ID] = {
+      providers[providerId] = {
         ...existing,
         name: existing?.name ?? CLIPROXY_PROVIDER_NAME,
         npm: existing?.npm ?? CLIPROXY_PROVIDER_NPM,
@@ -73,7 +77,7 @@ export const CliproxyAuthPlugin: Plugin = async (_input) => {
     },
 
     provider: {
-      id: CLIPROXY_PROVIDER_ID,
+      id: providerId,
       models: async (provider, ctx) => {
         const parsed = parseAuthKey(ctx.auth?.type === 'api' ? ctx.auth.key : undefined);
         const apiKey = resolveApiKey(provider.options, parsed);
@@ -84,18 +88,19 @@ export const CliproxyAuthPlugin: Plugin = async (_input) => {
           const models = await fetchModels(runtimeConfig, false);
           return toProviderModels(models, effectiveBaseUrl);
         } catch {
-          return toProviderModels(CLIPROXY_DEFAULT_MODELS, effectiveBaseUrl);
+          const fallback = runtimeConfig.fabricatedFallback === false ? [] : CLIPROXY_DEFAULT_MODELS;
+          return toProviderModels(fallback, effectiveBaseUrl);
         }
       },
     },
 
-    auth: createAuthHook(),
+    auth: createAuthHook(providerId),
   };
 };
 
-function createAuthHook(): AuthHook {
+function createAuthHook(providerId: string): AuthHook {
   return {
-    provider: CLIPROXY_PROVIDER_ID,
+    provider: providerId,
     methods: [
       {
         type: 'api',
@@ -120,7 +125,7 @@ function createAuthHook(): AuthHook {
           return {
             type: 'success',
             key: JSON.stringify({ baseURL, apiKey }),
-            provider: CLIPROXY_PROVIDER_ID,
+            provider: providerId,
           };
         },
       },
@@ -144,8 +149,8 @@ async function loadProviderOptions(
     models = await fetchModels(config, forceRefresh);
     debug(`Available models: ${models.map((m) => sanitizeForLog(m.id)).join(', ')}`);
   } catch (error) {
-    warn(`Failed to fetch models, using defaults: ${formatErrorForLog(error)}`);
-    models = CLIPROXY_DEFAULT_MODELS;
+    warn(`Failed to fetch models: ${formatErrorForLog(error)}`);
+    models = config.fabricatedFallback === false ? [] : CLIPROXY_DEFAULT_MODELS;
   }
 
   replaceProviderModels(provider, toProviderModels(models, config.baseUrl));
@@ -168,6 +173,8 @@ function createRuntimeConfig(
     apiKey,
     modelCacheTtl: getPositiveNumber(options, 'modelCacheTtl'),
     refreshOnList: getBoolean(options, 'refreshOnList'),
+    modelsClientVersion: getStringOption(options, 'modelsClientVersion'),
+    fabricatedFallback: getBoolean(options, 'fabricatedFallback'),
     modelsDev: getModelsDevConfig(options),
     modelsJsonPath: resolveModelsJsonPath(options),
   };
@@ -273,6 +280,18 @@ export function getBaseUrl(
   }
 
   return CLIPROXY_ENDPOINTS.BASE_URL;
+}
+
+function getProviderId(options: Record<string, unknown> | undefined): string {
+  const providerId = getStringOption(options, 'providerId') ?? CLIPROXY_PROVIDER_ID;
+  if (!/^[a-z0-9][a-z0-9-]*$/i.test(providerId)) {
+    throw new Error('providerId must be a non-empty slug');
+  }
+  return providerId;
+}
+
+function usesFabricatedFallback(options: Record<string, unknown> | undefined): boolean {
+  return getBoolean(options, 'fabricatedFallback') !== false;
 }
 
 function getPositiveNumber(
@@ -411,13 +430,23 @@ export function toProviderModel(
 
   const defaultReasoningVariants: Record<string, CliproxyModelVariant> =
     supportsReasoning && !model.variants
-      ? { low: {}, medium: {}, high: {} }
+      ? {
+          low: { reasoningEffort: 'low' },
+          medium: { reasoningEffort: 'medium' },
+          high: { reasoningEffort: 'high' },
+        }
       : {};
 
-  const variants =
+  const sourceVariants =
     model.variants && Object.keys(model.variants).length > 0
       ? model.variants
       : defaultReasoningVariants;
+  const variants = Object.fromEntries(
+    Object.entries(sourceVariants).map(([effort, options]) => [
+      effort,
+      { reasoningEffort: effort, ...options },
+    ]),
+  );
 
   const providerModel: CliproxyProviderModel = {
     id: model.id,

@@ -22,7 +22,7 @@ function getCacheKey(config: CliproxyConfig): string {
         providerAliases: config.modelsDev.providerAliases,
       })
     : '';
-  return `${config.baseUrl}:${config.apiKey}:${config.modelsJsonPath ?? ''}:${modelsDevHash}`;
+  return `${config.baseUrl}:${config.apiKey}:${config.modelsClientVersion ?? ''}:${config.modelsJsonPath ?? ''}:${config.fabricatedFallback ?? true}:${modelsDevHash}`;
 }
 
 function buildAuthHeaders(apiKey: string): HeadersInit {
@@ -40,15 +40,18 @@ async function fetchApiModels(
   config: CliproxyConfig,
 ): Promise<CliproxyModel[]> {
   const baseUrl = config.baseUrl || CLIPROXY_ENDPOINTS.BASE_URL;
-  const modelsUrl = `${baseUrl}${CLIPROXY_ENDPOINTS.MODELS}`;
+  const modelsUrl = new URL(`${baseUrl}${CLIPROXY_ENDPOINTS.MODELS}`);
+  if (config.modelsClientVersion) {
+    modelsUrl.searchParams.set('client_version', config.modelsClientVersion);
+  }
 
-  debug(`Fetching models from ${modelsUrl}`);
+  debug(`Fetching models from ${modelsUrl.toString()}`);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
   try {
-    const response = await fetch(modelsUrl, {
+    const response = await fetch(modelsUrl.toString(), {
       method: 'GET',
       headers: buildAuthHeaders(config.apiKey),
       signal: controller.signal,
@@ -60,18 +63,20 @@ async function fetchApiModels(
     }
 
     const rawData: unknown = await response.json();
-    if (
-      !rawData ||
-      typeof rawData !== 'object' ||
-      !Array.isArray((rawData as CliproxyModelsResponse).data)
-    ) {
+    if (!rawData || typeof rawData !== 'object') {
       throw new Error('Invalid models response structure');
     }
 
     const data = rawData as CliproxyModelsResponse;
-    return data.data
-      .filter((m) => m && typeof m.id === 'string')
-      .map(normalizeApiModel);
+    const entries = Array.isArray(data.models) ? data.models : data.data;
+    if (!Array.isArray(entries)) {
+      throw new Error('Invalid models response structure');
+    }
+
+    return entries
+      .filter((model) => model && typeof model === 'object')
+      .map(normalizeApiModel)
+      .filter((model) => model.id.length > 0);
   } finally {
     clearTimeout(timeoutId);
   }
@@ -111,6 +116,11 @@ async function fetchModelsUncached(config: CliproxyConfig): Promise<CliproxyMode
     if (stale) {
       debug('Returning expired cached models as fallback');
       return stale.value;
+    }
+
+    if (config.fabricatedFallback === false) {
+      debug('Fabricated fallback models disabled');
+      return [];
     }
 
     debug('Returning default models as fallback');

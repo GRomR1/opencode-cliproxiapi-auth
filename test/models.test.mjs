@@ -117,6 +117,49 @@ test('fetchModels falls back to defaults when response shape is invalid', async 
   assert.equal(typeof models[0].id, 'string');
 });
 
+test('fetchModels can disable fabricated fallback models', async () => {
+  global.fetch = async () => new Response(JSON.stringify({ data: null }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  const models = await fetchModels({ ...CONFIG, fabricatedFallback: false }, true);
+  assert.deepEqual(models, []);
+});
+
+test('fetchModels requests and parses CLIProxyAPI rich client catalog', async () => {
+  let requestedUrl = '';
+  global.fetch = async (input) => {
+    requestedUrl = input instanceof Request ? input.url : input.toString();
+    return new Response(JSON.stringify({
+      models: [{
+        slug: 'gpt-5.6-sol',
+        display_name: 'GPT 5.6 Sol',
+        max_context_window: 372000,
+        input_modalities: ['text', 'image'],
+        supported_reasoning_levels: [
+          { effort: 'low' },
+          { effort: 'xhigh' },
+          { effort: 'ultra' },
+        ],
+      }],
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+
+  const models = await fetchModels({
+    ...CONFIG,
+    modelsClientVersion: '0.144.1',
+    modelsJsonPath: undefined,
+    modelsDev: { enabled: false },
+    fabricatedFallback: false,
+  }, true);
+
+  assert.equal(new URL(requestedUrl).searchParams.get('client_version'), '0.144.1');
+  assert.equal(models[0].id, 'gpt-5.6-sol');
+  assert.equal(models[0].contextWindow, 372000);
+  assert.deepEqual(models[0].variants.ultra, { reasoningEffort: 'ultra' });
+});
+
 test('fetchModels deduplicates concurrent requests', async () => {
   let calls = 0;
   global.fetch = async (input) => {
