@@ -246,6 +246,13 @@ async function readAuthFromStore(
   }
 }
 
+function isLoopbackHostname(hostname: string): boolean {
+  const normalized = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  if (normalized === 'localhost' || normalized === '::1') return true;
+  const octets = normalized.split('.').map(Number);
+  return octets.length === 4 && octets.every(Number.isInteger) && octets[0] === 127;
+}
+
 export function getBaseUrl(
   options?: Record<string, unknown>,
   authBaseUrl?: string,
@@ -264,6 +271,10 @@ export function getBaseUrl(
       const parsed = new URL(trimmed);
       if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
         warn(`Ignoring unsupported baseURL protocol: ${sanitizeForLog(parsed.protocol)}`);
+        continue;
+      }
+      if (parsed.protocol === 'http:' && !isLoopbackHostname(parsed.hostname)) {
+        warn(`Ignoring insecure remote HTTP baseURL: ${sanitizeForLog(trimmed)}`);
         continue;
       }
       return trimmed.replace(/\/+$/, '');
