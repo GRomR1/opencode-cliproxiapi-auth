@@ -163,9 +163,12 @@ function createRuntimeConfig(
   authBaseUrl?: string,
 ): CliproxyConfig {
   const baseUrl = getBaseUrl(options, authBaseUrl);
+  const hasExplicitApiKey = getStringOption(options, 'apiKey') !== undefined;
+  const originMatchesCredential =
+    !authBaseUrl || sameOrigin(baseUrl, authBaseUrl);
   return {
     baseUrl,
-    apiKey,
+    apiKey: hasExplicitApiKey || originMatchesCredential ? apiKey : '',
     modelCacheTtl: getPositiveNumber(options, 'modelCacheTtl'),
     refreshOnList: getBoolean(options, 'refreshOnList'),
     modelsDev: getModelsDevConfig(options),
@@ -243,6 +246,14 @@ async function readAuthFromStore(
     }
     warn(`Unexpected error reading auth store: ${formatErrorForLog(error)}`);
     return null;
+  }
+}
+
+function sameOrigin(left: string, right: string): boolean {
+  try {
+    return new URL(left).origin === new URL(right).origin;
+  } catch {
+    return false;
   }
 }
 
