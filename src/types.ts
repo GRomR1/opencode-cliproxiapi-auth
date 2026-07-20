@@ -56,6 +56,8 @@ export interface CliproxyModel {
 
   thinking?: CliproxyThinking;
   variants?: Record<string, CliproxyModelVariant>;
+  /** Internal marker for metadata returned by CLIProxyAPI's rich catalog. */
+  serverAuthoritative?: boolean;
 
   pricing?: {
     input?: number;
@@ -63,23 +65,20 @@ export interface CliproxyModel {
   };
 }
 
-/** OpenCode config variant — only `disabled` is allowed by opencode.ai/config.json */
+/** OpenCode config variant options merged into the selected model request. */
 export interface CliproxyModelVariant {
   disabled?: boolean;
+  reasoningEffort?: string;
 }
 
 /**
  * OpenAI-compatible /v1/models response
  */
 export interface CliproxyModelsResponse {
-  object: 'list';
-  data: Array<{
-    id: string;
-    object?: string;
-    created?: number;
-    owned_by?: string;
-    [key: string]: unknown;
-  }>;
+  object?: 'list';
+  data?: Array<Record<string, unknown>>;
+  /** Rich Codex-compatible catalog returned when client_version is requested. */
+  models?: Array<Record<string, unknown>>;
 }
 
 export interface CliproxyModelsDevConfig {
@@ -99,6 +98,10 @@ export interface CliproxyConfig {
   defaultModels?: CliproxyModel[];
   modelCacheTtl?: number;
   refreshOnList?: boolean;
+  /** Request CLIProxyAPI's server-authoritative rich client catalog. */
+  modelsClientVersion?: string;
+  /** Retain the legacy built-in fallback catalog when no live/stale catalog exists. */
+  fabricatedFallback?: boolean;
   modelsDev?: CliproxyModelsDevConfig;
   /** Local path or URL to CLIProxyAPI models.json for metadata enrichment */
   modelsJsonPath?: string;

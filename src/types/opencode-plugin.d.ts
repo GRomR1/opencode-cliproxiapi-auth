@@ -21,7 +21,7 @@ declare module '@opencode-ai/plugin' {
 
   export interface Config {
     provider?: Record<string, Provider>;
-    plugin?: string[];
+    plugin?: Array<string | [string, Record<string, unknown>]>;
     [key: string]: unknown;
   }
 
@@ -121,7 +121,7 @@ declare module '@opencode-ai/plugin' {
     options?: Record<string, unknown>;
     headers?: Record<string, string>;
     status?: 'alpha' | 'beta' | 'deprecated' | 'active';
-    variants?: Record<string, { disabled?: boolean }>;
+    variants?: Record<string, { disabled?: boolean; reasoningEffort?: string }>;
   }
 
   export interface ProviderV2 {
@@ -149,5 +149,8 @@ declare module '@opencode-ai/plugin' {
     [key: string]: unknown;
   }
 
-  export type Plugin = (input: PluginInput) => Promise<Hooks>;
+  export type Plugin = (
+    input: PluginInput,
+    options?: Record<string, unknown>,
+  ) => Promise<Hooks>;
 }

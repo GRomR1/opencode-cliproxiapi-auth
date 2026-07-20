@@ -8,14 +8,39 @@ import {
   normalizeApiModel,
 } from '../dist/runtime.js';
 
-test('thinkingToVariants maps CLIProxyAPI levels to reasoning variants', () => {
+test('thinkingToVariants maps every server-advertised level to an effective effort', () => {
   const variants = thinkingToVariants({
-    levels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    levels: ['low', 'medium', 'high', 'xhigh', 'max', 'ultra'],
   });
 
-  assert.deepEqual(variants.low, {});
-  assert.deepEqual(variants.xhigh, {});
-  assert.deepEqual(variants.max, {});
+  assert.deepEqual(variants.low, { reasoningEffort: 'low' });
+  assert.deepEqual(variants.xhigh, { reasoningEffort: 'xhigh' });
+  assert.deepEqual(variants.max, { reasoningEffort: 'max' });
+  assert.deepEqual(variants.ultra, { reasoningEffort: 'ultra' });
+});
+
+test('normalizeApiModel consumes server-authoritative rich catalog metadata', () => {
+  const model = normalizeApiModel({
+    id: 'gpt-5.6-sol',
+    display_name: 'GPT 5.6 Sol',
+    description: 'Latest frontier agentic coding model.',
+    max_context_window: 372000,
+    input_modalities: ['text', 'image'],
+    supports_parallel_tool_calls: true,
+    supported_reasoning_levels: [
+      { effort: 'low' },
+      { effort: 'xhigh' },
+      { effort: 'ultra' },
+    ],
+  });
+
+  assert.equal(model.name, 'GPT 5.6 Sol');
+  assert.equal(model.description, 'Latest frontier agentic coding model.');
+  assert.equal(model.contextWindow, 372000);
+  assert.equal(model.supportsVision, true);
+  assert.equal(model.supportsTools, true);
+  assert.equal(model.supportsReasoning, true);
+  assert.deepEqual(model.variants.ultra, { reasoningEffort: 'ultra' });
 });
 
 test('normalizeRegistryModel reads gemini token limits', () => {

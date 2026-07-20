@@ -12,11 +12,13 @@ import { parseAuthKey } from '../dist/src/plugin.js';
 const ORIGINAL_FETCH = global.fetch;
 const ORIGINAL_HOME = process.env.HOME;
 const ORIGINAL_XDG_DATA_HOME = process.env.XDG_DATA_HOME;
+const ORIGINAL_CLIPROXY_API_KEY = process.env.CLIPROXY_API_KEY;
 
 afterEach(() => {
   global.fetch = ORIGINAL_FETCH;
   restoreEnv('HOME', ORIGINAL_HOME);
   restoreEnv('XDG_DATA_HOME', ORIGINAL_XDG_DATA_HOME);
+  restoreEnv('CLIPROXY_API_KEY', ORIGINAL_CLIPROXY_API_KEY);
   clearModelCache();
   clearModelsDevCache();
 });
@@ -52,6 +54,33 @@ test('config hook applies default baseURL', async () => {
 
   await plugin.config(config);
   assert.equal(config.provider.cliproxy.options.baseURL, 'http://localhost:8317/v1');
+});
+
+test('provider ID is configurable while retaining the legacy default', async () => {
+  global.fetch = async () => new Response(
+    JSON.stringify({ object: 'list', data: [{ id: 'live-model' }] }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } },
+  );
+
+  const plugin = await CliproxyAuthPlugin({}, { providerId: 'cliproxyapi' });
+  const config = {
+    provider: {
+      cliproxyapi: {
+        options: {
+          baseURL: baseUrl(),
+          modelsJsonPath: '',
+          modelsDev: { enabled: false },
+          fabricatedFallback: false,
+        },
+      },
+    },
+  };
+
+  await plugin.config(config);
+  assert.equal(plugin.provider.id, 'cliproxyapi');
+  assert.equal(plugin.auth.provider, 'cliproxyapi');
+  assert.ok(config.provider.cliproxyapi.models['live-model']);
+  assert.equal(config.provider.cliproxy, undefined);
 });
 
 test('parseAuthKey supports JSON connect payload and plain keys', () => {
@@ -100,6 +129,7 @@ test('loader injects auth header only for CLIProxyAPI URLs', async () => {
 });
 
 test('loader works without api key when server has no auth', async () => {
+  delete process.env.CLIPROXY_API_KEY;
   const plugin = await CliproxyAuthPlugin({});
   let authHeader = 'unset';
 
@@ -287,8 +317,8 @@ test('toProviderModel matches opencode.ai/config.json model shape', async () => 
     assert.equal(model[key], undefined, `unexpected field ${key}`);
   }
   assert.equal(model.cost.cache, undefined);
-  assert.deepEqual(model.variants.low, {});
-  assert.equal(model.variants.low.reasoningEffort, undefined);
+  assert.deepEqual(model.variants.low, { reasoningEffort: 'low' });
+  assert.equal(model.variants.low.reasoningEffort, 'low');
 });
 
 test('fetch interceptor does not force Content-Type on GET requests', async () => {
