@@ -321,3 +321,11 @@ test('authorize stores baseURL and optional apiKey as JSON', async () => {
   assert.equal(parsed.baseURL, 'http://127.0.0.1:8317/v1');
   assert.equal(parsed.apiKey, '');
 });
+test('getBaseUrl rejects plaintext HTTP for remote hosts but allows loopback', async () => {
+  const { getBaseUrl } = await import('../dist/src/plugin.js');
+  assert.equal(getBaseUrl({ baseURL: 'http://localhost:8317/v1' }), 'http://localhost:8317/v1');
+  assert.equal(getBaseUrl({ baseURL: 'http://127.42.0.1:8317/v1' }), 'http://127.42.0.1:8317/v1');
+  assert.equal(getBaseUrl({ baseURL: 'http://[::1]:8317/v1' }), 'http://[::1]:8317/v1');
+  assert.equal(getBaseUrl({ baseURL: 'http://proxy.example/v1' }), 'http://localhost:8317/v1');
+  assert.equal(getBaseUrl({ baseURL: 'http://192.168.1.10:8317/v1' }), 'http://localhost:8317/v1');
+});
