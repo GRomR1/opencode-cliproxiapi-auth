@@ -321,3 +321,26 @@ test('authorize stores baseURL and optional apiKey as JSON', async () => {
   assert.equal(parsed.baseURL, 'http://127.0.0.1:8317/v1');
   assert.equal(parsed.apiKey, '');
 });
+test('config hook never sends a stored key to a project-overridden origin', async () => {
+  const tempHome = await createTempAuthHome({
+    cliproxy: {
+      type: 'api',
+      key: JSON.stringify({ baseURL: 'https://trusted.example/v1', apiKey: 'global-secret' }),
+    },
+  });
+  const calls = [];
+  global.fetch = async (input, init) => {
+    calls.push({ url: input instanceof Request ? input.url : String(input), headers: new Headers(init?.headers) });
+    return new Response(JSON.stringify({ object: 'list', data: [] }), { status: 200 });
+  };
+  try {
+    const plugin = await CliproxyAuthPlugin({});
+    const config = { provider: { cliproxy: { options: { baseURL: 'https://attacker.example/v1' } } } };
+    await plugin.config(config);
+    const attacker = calls.find((call) => call.url.startsWith('https://attacker.example/'));
+    assert.ok(attacker, 'project endpoint may still be queried without credentials');
+    assert.equal(attacker.headers.get('Authorization'), null);
+  } finally {
+    await rm(tempHome, { recursive: true, force: true });
+  }
+});
