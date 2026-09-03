@@ -12,11 +12,17 @@ import { parseAuthKey } from '../dist/src/plugin.js';
 const ORIGINAL_FETCH = global.fetch;
 const ORIGINAL_HOME = process.env.HOME;
 const ORIGINAL_XDG_DATA_HOME = process.env.XDG_DATA_HOME;
+const ORIGINAL_CLIPROXY_BASE_URL = process.env.CLIPROXY_BASE_URL;
+const ORIGINAL_CLIPROXYAPI_BASE_URL = process.env.CLIPROXYAPI_BASE_URL;
+const ORIGINAL_CLIPROXY_PROVIDER_ID = process.env.CLIPROXY_PROVIDER_ID;
 
 afterEach(() => {
   global.fetch = ORIGINAL_FETCH;
   restoreEnv('HOME', ORIGINAL_HOME);
   restoreEnv('XDG_DATA_HOME', ORIGINAL_XDG_DATA_HOME);
+  restoreEnv('CLIPROXY_BASE_URL', ORIGINAL_CLIPROXY_BASE_URL);
+  restoreEnv('CLIPROXYAPI_BASE_URL', ORIGINAL_CLIPROXYAPI_BASE_URL);
+  restoreEnv('CLIPROXY_PROVIDER_ID', ORIGINAL_CLIPROXY_PROVIDER_ID);
   clearModelCache();
   clearModelsDevCache();
 });
@@ -320,4 +326,53 @@ test('authorize stores baseURL and optional apiKey as JSON', async () => {
   const parsed = JSON.parse(result.key);
   assert.equal(parsed.baseURL, 'http://127.0.0.1:8317/v1');
   assert.equal(parsed.apiKey, '');
+});
+
+test('getBaseUrl uses CLIPROXY_BASE_URL before localhost default', async () => {
+  const { getBaseUrl } = await import('../dist/src/plugin.js');
+  process.env.CLIPROXY_BASE_URL = 'https://gateway.example/v1';
+  assert.equal(getBaseUrl({}), 'https://gateway.example/v1');
+});
+
+test('getBaseUrl prefers provider options over CLIPROXY_BASE_URL', async () => {
+  const { getBaseUrl } = await import('../dist/src/plugin.js');
+  process.env.CLIPROXY_BASE_URL = 'https://gateway.example/v1';
+  assert.equal(
+    getBaseUrl({ baseURL: 'https://other.example/v1' }),
+    'https://other.example/v1',
+  );
+});
+
+test('config hook honors plugin options.providerId and options.baseURL', async () => {
+  global.fetch = async () => new Response('{}', { status: 500 });
+
+  const plugin = await CliproxyAuthPlugin({
+    options: {
+      providerId: 'cliproxyapi',
+      baseURL: 'https://gateway.example/v1',
+    },
+  });
+  const config = { provider: {} };
+  await plugin.config(config);
+
+  assert.equal(plugin.provider.id, 'cliproxyapi');
+  assert.equal(plugin.auth.provider, 'cliproxyapi');
+  assert.equal(config.provider.cliproxyapi.options.baseURL, 'https://gateway.example/v1');
+  assert.equal(config.provider.cliproxy, undefined);
+});
+
+test('config hook reads cliproxyapi provider options when id is default cliproxy', async () => {
+  global.fetch = async () => new Response('{}', { status: 500 });
+
+  const plugin = await CliproxyAuthPlugin({});
+  const config = {
+    provider: {
+      cliproxyapi: {
+        options: { baseURL: 'https://gateway.example/v1' },
+      },
+    },
+  };
+  await plugin.config(config);
+
+  assert.equal(config.provider.cliproxy.options.baseURL, 'https://gateway.example/v1');
 });
