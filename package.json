@@ -24,7 +24,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "node -e \"const fs=require('fs');if(fs.existsSync('dist'))fs.rmSync('dist',{recursive:true});\"",
-    "test": "npm run build && node --test test/models.test.mjs test/normalizer.test.mjs test/models-json.test.mjs test/models-dev.test.mjs test/logger.test.mjs test/plugin.test.mjs",
+    "test": "npm run build && node --test test/models.test.mjs test/normalizer.test.mjs test/models-json.test.mjs test/models-dev.test.mjs test/logger.test.mjs test/plugin.test.mjs test/telemetry.test.mjs",
     "test:integration": "npm run build && CLIPROXY_INTEGRATION=1 node --test test/integration.test.mjs",
     "check:exports": "node --input-type=module -e \"import('./dist/index.js').then((m)=>{if(typeof m.default!=='function'){throw new Error('Default export must be a function');}for(const [key,value] of Object.entries(m)){if(typeof value!=='function'){throw new Error('Root export '+key+' must be a function to satisfy plugin loader constraints');}}})\"",
     "prepublishOnly": "npm run clean && npm run build && npm run check:exports"
