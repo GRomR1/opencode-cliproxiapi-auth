@@ -1,4 +1,4 @@
-import type { Plugin, Hooks } from '@opencode-ai/plugin';
+import type { Plugin, Hooks, PluginInput } from '@opencode-ai/plugin';
 import { homedir } from 'os';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
@@ -34,14 +34,49 @@ interface ParsedAuth {
   baseUrl?: string;
 }
 
-export const CliproxyAuthPlugin: Plugin = async (_input) => {
+type PluginInit = PluginInput & {
+  options?: Record<string, unknown>;
+};
+
+const PROVIDER_ID_ALIASES = ['cliproxy', 'cliproxyapi'] as const;
+
+function readPluginOptions(input: PluginInput): Record<string, unknown> {
+  const options = (input as PluginInit).options;
+  return isRecord(options) ? options : {};
+}
+
+export function resolveProviderId(pluginOptions?: Record<string, unknown>): string {
+  const fromOptions = pluginOptions?.providerId ?? pluginOptions?.providerID;
+  if (typeof fromOptions === 'string' && fromOptions.trim()) {
+    return fromOptions.trim();
+  }
+  const fromEnv = process.env.CLIPROXY_PROVIDER_ID?.trim();
+  if (fromEnv) return fromEnv;
+  return CLIPROXY_PROVIDER_ID;
+}
+
+function pickExistingProvider(
+  providers: Record<string, ProviderDefinition | undefined>,
+  providerId: string,
+): ProviderDefinition | undefined {
+  if (providers[providerId]) return providers[providerId];
+  for (const alias of PROVIDER_ID_ALIASES) {
+    if (providers[alias]) return providers[alias];
+  }
+  return undefined;
+}
+
+export const CliproxyAuthPlugin: Plugin = async (input) => {
+  const pluginOptions = readPluginOptions(input);
+  const providerId = resolveProviderId(pluginOptions);
+
   return {
     config: async (config) => {
       const providers = config.provider ?? {};
-      const existing = providers[CLIPROXY_PROVIDER_ID];
-      const auth = await readAuthFromStore(CLIPROXY_PROVIDER_ID);
+      const existing = pickExistingProvider(providers, providerId);
+      const auth = await readAuthFromStore(providerId);
       const parsed = parseAuthKey(auth?.key);
-      const baseUrl = getBaseUrl(existing?.options, parsed.baseUrl);
+      const baseUrl = getBaseUrl(existing?.options, parsed.baseUrl, pluginOptions);
 
       let models: CliproxyModel[] = CLIPROXY_DEFAULT_MODELS;
       try {
@@ -50,6 +85,7 @@ export const CliproxyAuthPlugin: Plugin = async (_input) => {
           existing?.options ?? {},
           apiKey,
           parsed.baseUrl,
+          pluginOptions,
         );
         models = await fetchModels(runtimeConfig, false);
       } catch (error) {
@@ -57,7 +93,7 @@ export const CliproxyAuthPlugin: Plugin = async (_input) => {
       }
 
       const shouldRefresh = shouldRefreshProviderModels(existing);
-      providers[CLIPROXY_PROVIDER_ID] = {
+      providers[providerId] = {
         ...existing,
         name: existing?.name ?? CLIPROXY_PROVIDER_NAME,
         npm: existing?.npm ?? CLIPROXY_PROVIDER_NPM,
@@ -73,11 +109,11 @@ export const CliproxyAuthPlugin: Plugin = async (_input) => {
     },
 
     provider: {
-      id: CLIPROXY_PROVIDER_ID,
+      id: providerId,
       models: async (provider, ctx) => {
         const parsed = parseAuthKey(ctx.auth?.type === 'api' ? ctx.auth.key : undefined);
         const apiKey = resolveApiKey(provider.options, parsed);
-        const runtimeConfig = createRuntimeConfig(provider.options, apiKey, parsed.baseUrl);
+        const runtimeConfig = createRuntimeConfig(provider.options, apiKey, parsed.baseUrl, pluginOptions);
         const effectiveBaseUrl = runtimeConfig.baseUrl;
 
         try {
@@ -89,13 +125,13 @@ export const CliproxyAuthPlugin: Plugin = async (_input) => {
       },
     },
 
-    auth: createAuthHook(),
+    auth: createAuthHook(providerId, pluginOptions),
   };
 };
 
-function createAuthHook(): AuthHook {
+function createAuthHook(providerId: string, pluginOptions: Record<string, unknown>): AuthHook {
   return {
-    provider: CLIPROXY_PROVIDER_ID,
+    provider: providerId,
     methods: [
       {
         type: 'api',
@@ -115,28 +151,29 @@ function createAuthHook(): AuthHook {
           },
         ],
         authorize: async (inputs) => {
-          const baseURL = getBaseUrl({ baseURL: inputs?.baseURL });
+          const baseURL = getBaseUrl({ baseURL: inputs?.baseURL }, undefined, pluginOptions);
           const apiKey = inputs?.apiKey?.trim() ?? '';
           return {
             type: 'success',
             key: JSON.stringify({ baseURL, apiKey }),
-            provider: CLIPROXY_PROVIDER_ID,
+            provider: providerId,
           };
         },
       },
     ],
-    loader: loadProviderOptions,
+    loader: (getAuth, provider) => loadProviderOptions(getAuth, provider, pluginOptions),
   };
 }
 
 async function loadProviderOptions(
   getAuth: AuthAccessor,
   provider: ProviderDefinition,
+  pluginOptions: Record<string, unknown> = {},
 ): Promise<Record<string, unknown>> {
   const auth = await getAuth();
   const parsed = auth?.type === 'api' ? parseAuthKey(auth.key) : { apiKey: '' };
   const apiKey = resolveApiKey(provider.options, parsed);
-  const config = createRuntimeConfig(provider.options, apiKey, parsed.baseUrl);
+  const config = createRuntimeConfig(provider.options, apiKey, parsed.baseUrl, pluginOptions);
 
   let models: CliproxyModel[] = [];
   try {
@@ -161,8 +198,9 @@ function createRuntimeConfig(
   options: Record<string, unknown> | undefined,
   apiKey: string,
   authBaseUrl?: string,
+  pluginOptions?: Record<string, unknown>,
 ): CliproxyConfig {
-  const baseUrl = getBaseUrl(options, authBaseUrl);
+  const baseUrl = getBaseUrl(options, authBaseUrl, pluginOptions);
   return {
     baseUrl,
     apiKey,
@@ -234,9 +272,12 @@ async function readAuthFromStore(
     const content = await readFile(authPath, 'utf-8');
     const data: unknown = JSON.parse(content);
     if (!isRecord(data)) return null;
-    const auth = data[providerId];
-    if (!isRecord(auth)) return null;
-    return auth as { key?: string; type?: string };
+    const ids = [providerId, ...PROVIDER_ID_ALIASES.filter((alias) => alias !== providerId)];
+    for (const id of ids) {
+      const auth = data[id];
+      if (isRecord(auth)) return auth as { key?: string; type?: string };
+    }
+    return null;
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
       return null;
@@ -249,14 +290,23 @@ async function readAuthFromStore(
 export function getBaseUrl(
   options?: Record<string, unknown>,
   authBaseUrl?: string,
+  pluginOptions?: Record<string, unknown>,
 ): string {
   const candidates: string[] = [];
+  const fromPlugin = pluginOptions?.baseURL ?? pluginOptions?.baseUrl;
+  if (typeof fromPlugin === 'string' && fromPlugin.trim()) {
+    candidates.push(fromPlugin.trim());
+  }
   const fromOptions = options?.baseURL ?? options?.baseUrl;
   if (typeof fromOptions === 'string' && fromOptions.trim()) {
     candidates.push(fromOptions.trim());
   }
   if (typeof authBaseUrl === 'string' && authBaseUrl.trim()) {
     candidates.push(authBaseUrl.trim());
+  }
+  const fromEnv = process.env.CLIPROXY_BASE_URL ?? process.env.CLIPROXYAPI_BASE_URL;
+  if (typeof fromEnv === 'string' && fromEnv.trim()) {
+    candidates.push(fromEnv.trim());
   }
 
   for (const trimmed of candidates) {

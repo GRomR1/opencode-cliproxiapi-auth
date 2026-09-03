@@ -104,6 +104,9 @@ Models appear as `cliproxy/<model-id>`, e.g. `cliproxy/claude-sonnet-4-6`.
 opencode run -m cliproxy/gpt-5.4-mini "Hello"
 ```
 
+The registered provider id is `cliproxy` unless you set plugin option `providerId`
+(or `CLIPROXY_PROVIDER_ID`) to another id such as `cliproxyapi`.
+
 ## Configuration
 
 Optional settings in `opencode.json`:
@@ -124,6 +127,29 @@ Optional settings in `opencode.json`:
   }
 }
 ```
+
+`baseURL` resolution order: plugin `options.baseURL` → `provider.<id>.options.baseURL` →
+auth-store `baseURL` from `/connect` → `CLIPROXY_BASE_URL` / `CLIPROXYAPI_BASE_URL` →
+`http://localhost:8317/v1`.
+
+To register under `cliproxyapi` instead of `cliproxy`:
+
+```json
+{
+  "plugin": [
+    {
+      "name": "opencode-cliproxiapi-auth",
+      "options": {
+        "providerId": "cliproxyapi",
+        "baseURL": "https://gateway.example/v1"
+      }
+    }
+  ]
+}
+```
+
+If `provider.cliproxyapi.options.baseURL` is set and `provider.cliproxy` is absent,
+the default `cliproxy` id still reads that alias.
 
 ### models.json enrichment
 

@@ -83,9 +83,10 @@ No `NPM_TOKEN` GitHub secret — npm publish uses [trusted publishing](https://d
 1. **`/connect cliproxy`** — prompts for `baseURL` (default `http://localhost:8317/v1`) and optional `apiKey`.
 2. **`authorize`** stores JSON in auth key: `{"baseURL":"...","apiKey":"..."}`.
 3. **`parseAuthKey()`** accepts JSON payload or plain API key string.
-4. **baseURL priority:** `options.baseURL` → auth-stored `baseURL` from `/connect` → `http://localhost:8317/v1` (`getBaseUrl()`).
-5. **API key priority:** `options.apiKey` → auth key → `CLIPROXY_API_KEY` env → empty (no `Authorization` header).
-6. Credentials persist in `~/.local/share/opencode/auth.json` under `cliproxy`.
+4. **baseURL priority:** plugin `options.baseURL` → provider `options.baseURL` → auth-stored `baseURL` from `/connect` → `CLIPROXY_BASE_URL` / `CLIPROXYAPI_BASE_URL` → `http://localhost:8317/v1` (`getBaseUrl()`).
+5. **provider id:** plugin `options.providerId` → `CLIPROXY_PROVIDER_ID` env → `cliproxy`. Config under `cliproxyapi` is treated as an alias when the resolved id has no entry.
+6. **API key priority:** `options.apiKey` → auth key → `CLIPROXY_API_KEY` env → empty (no `Authorization` header).
+7. Credentials persist in `$HOME/.local/share/opencode/auth.json` under the resolved provider id (`cliproxy` by default).
 
 ### Fetch Interceptor (`createFetchInterceptor`)
 

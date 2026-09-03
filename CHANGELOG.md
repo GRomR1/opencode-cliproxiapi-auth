@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Honor plugin `providerId` / `baseURL`, `CLIPROXY_BASE_URL`, and `cliproxyapi` provider aliases instead of always assuming `cliproxy` + `http://localhost:8317/v1`.
+
 - GitHub Actions upgraded to `checkout@v6` and `setup-node@v6` (Node 24)
 - `README.md` and `AGENTS.md` updated for npm publish and trusted publishing
 
