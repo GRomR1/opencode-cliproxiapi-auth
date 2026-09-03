@@ -19,6 +19,7 @@ import {
 import { fetchModels } from './model-fetcher.js';
 import { getModelFamily } from './normalizer.js';
 import { warn, debug, sanitizeForLog, formatErrorForLog } from './logger.js';
+import { applyGatewayInferenceTelemetry } from './telemetry.js';
 
 const CLIPROXY_PROVIDER_NAME = 'CLIProxyAPI';
 const CLIPROXY_PROVIDER_NPM = '@ai-sdk/openai-compatible';
@@ -489,6 +490,6 @@ function createFetchInterceptor(
       headers.set('Content-Type', 'application/json');
     }
 
-    return fetch(input, { ...init, headers });
+    return applyGatewayInferenceTelemetry(await fetch(input, { ...init, headers }));
   };
 }
