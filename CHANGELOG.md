@@ -10,10 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - npm package renamed to `opencode-cliproxyapi-auth` (typo fix). Provider ID `cliproxy` is unchanged; `auth.json` needs no migration.
-- Publish a final deprecated release of `opencode-cliproxiapi-auth` that points at the new name after this lands.
-
 - GitHub Actions upgraded to `checkout@v6` and `setup-node@v6` (Node 24)
 - `README.md` and `AGENTS.md` updated for npm publish and trusted publishing
+
+### Migration notes
+
+- After this lands, maintainers may publish a final deprecated release of `opencode-cliproxiapi-auth` that points at the new package name. That publish step is outside this codebase change.
 
 ## [1.0.1] - 2026-07-07
 

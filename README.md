@@ -5,13 +5,13 @@ OpenCode authentication and model-provider plugin for [CLIProxyAPI](https://gith
 Connect OpenCode to a running CLIProxyAPI instance (local or remote), authenticate with an optional API key, dynamically load models from `/v1/models`, and enrich metadata from CLIProxyAPI `models.json` and [models.dev](https://models.dev/).
 
 
-## Package rename (`cliproxyapi`)
+## Package rename
 
 The published npm name is **`opencode-cliproxyapi-auth`**. The previous spelling `opencode-cliproxiapi-auth` was a typo.
 
 - OpenCode plugin specifier: `"plugin": ["opencode-cliproxyapi-auth"]`
 - Provider ID remains **`cliproxy`**. Existing `auth.json` entries do not need to change.
-- GitHub repository rename (if/when applied by maintainers) keeps redirects from `GRomR1/opencode-cliproxiapi-auth`.
+- The GitHub repository is still `GRomR1/opencode-cliproxiapi-auth` until maintainers rename it; redirects will apply after a rename. `package.json` `repository` / `homepage` / `bugs` URLs intentionally keep the current GitHub name until then.
 
 Migration: replace the plugin package specifier only.
 
@@ -56,7 +56,7 @@ Add to `opencode.json`:
 ### Local development
 
 ```bash
-git clone https://github.com/GRomR1/opencode-cliproxiapi-auth.git
+git clone https://github.com/GRomR1/opencode-cliproxiapi-auth.git opencode-cliproxyapi-auth
 cd opencode-cliproxyapi-auth
 npm install
 npm run build
@@ -270,13 +270,13 @@ Workflow: `.github/workflows/publish.yml` (triggers: tag `v*`, GitHub Release, m
 | Field | Value |
 |-------|-------|
 | Organization or user | `GRomR1` (exact GitHub casing — npm is case-sensitive) |
-| Repository | `opencode-cliproxyapi-auth` |
+| Repository | `opencode-cliproxyapi-auth` (after GitHub rename) or current `opencode-cliproxiapi-auth` until then |
 | Workflow filename | `publish.yml` |
 | Allowed actions | `npm publish` |
 
 5. Save. npm does not validate until the first publish attempt — double-check spelling.
 
-`package.json` → `repository.url` must use the same casing as GitHub (`git+https://github.com/GRomR1/opencode-cliproxiapi-auth.git`).
+`package.json` → `repository.url` must match the current GitHub repository name/casing (today: `git+https://github.com/GRomR1/opencode-cliproxiapi-auth.git`). Update it when maintainers rename the repo.
 
 Optional hardening after verified publish: package **Settings → Publishing access → Require 2FA and disallow tokens**, then revoke old automation tokens.
 
