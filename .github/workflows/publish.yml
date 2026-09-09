@@ -52,7 +52,7 @@ jobs:
       - name: Check version is not already on npm
         run: |
           PKG="$(node -p "require('./package.json').version")"
-          PUBLISHED="$(npm view opencode-cliproxiapi-auth version 2>/dev/null || true)"
+          PUBLISHED="$(npm view opencode-cliproxyapi-auth version 2>/dev/null || true)"
           if [ "$PUBLISHED" = "$PKG" ]; then
             echo "Version $PKG is already published on npm — bump package.json first"
             exit 1
