@@ -1,10 +1,10 @@
-# Agent Guidelines for opencode-cliproxiapi-auth
+# Agent Guidelines for opencode-cliproxyapi-auth
 
 Guidelines for AI agents working in this repository.
 
 ## Overview
 
-`opencode-cliproxiapi-auth` is an [OpenCode](https://opencode.ai) authentication and model-provider plugin for [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI).
+`opencode-cliproxyapi-auth` is an [OpenCode](https://opencode.ai) authentication and model-provider plugin for [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI).
 
 It registers the `cliproxy` provider, supports `/connect cliproxy`, fetches models from `/v1/models`, enriches metadata from CLIProxyAPI `models.json` and [models.dev](https://models.dev/), and maps `thinking.levels` to OpenCode reasoning variants.
 
@@ -246,9 +246,9 @@ Check logs under `~/.local/share/opencode/log/` (`service=cliproxy`).
 
 | Setting | Value |
 |---------|-------|
-| npm package | [opencode-cliproxiapi-auth](https://www.npmjs.com/package/opencode-cliproxiapi-auth) |
+| npm package | [opencode-cliproxyapi-auth](https://www.npmjs.com/package/opencode-cliproxyapi-auth) |
 | GitHub user | `GRomR1` (**case-sensitive** — not `gromr1`) |
-| Repository | `opencode-cliproxiapi-auth` |
+| Repository | `opencode-cliproxyapi-auth` |
 | Workflow file | `publish.yml` |
 | Allowed action | `npm publish` |
 
@@ -256,4 +256,4 @@ Check logs under `~/.local/share/opencode/log/` (`service=cliproxy`).
 
 **CI:** `.github/workflows/ci.yml` on push/PR.
 
-Package name: **`opencode-cliproxiapi-auth`**. Provider slug: **`cliproxy`**.
+Package name: **`opencode-cliproxyapi-auth`**. Provider slug: **`cliproxy`**.

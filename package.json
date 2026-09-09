@@ -1,5 +1,5 @@
 {
-  "name": "opencode-cliproxiapi-auth",
+  "name": "opencode-cliproxyapi-auth",
   "version": "1.0.1",
   "description": "OpenCode authentication plugin for CLIProxyAPI with /connect command and dynamic model fetching",
   "type": "module",
@@ -44,11 +44,11 @@
   "author": "Ruslan Gainanov",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GRomR1/opencode-cliproxiapi-auth.git"
+    "url": "git+https://github.com/GRomR1/opencode-cliproxyapi-auth.git"
   },
-  "homepage": "https://github.com/GRomR1/opencode-cliproxiapi-auth#readme",
+  "homepage": "https://github.com/GRomR1/opencode-cliproxyapi-auth#readme",
   "bugs": {
-    "url": "https://github.com/GRomR1/opencode-cliproxiapi-auth/issues"
+    "url": "https://github.com/GRomR1/opencode-cliproxyapi-auth/issues"
   },
   "license": "MIT",
   "publishConfig": {

@@ -1,8 +1,19 @@
-# opencode-cliproxiapi-auth
+# opencode-cliproxyapi-auth
 
 OpenCode authentication and model-provider plugin for [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI).
 
 Connect OpenCode to a running CLIProxyAPI instance (local or remote), authenticate with an optional API key, dynamically load models from `/v1/models`, and enrich metadata from CLIProxyAPI `models.json` and [models.dev](https://models.dev/).
+
+
+## Package rename
+
+The published npm name is **`opencode-cliproxyapi-auth`**. The previous spelling `opencode-cliproxiapi-auth` was a typo.
+
+- OpenCode plugin specifier: `"plugin": ["opencode-cliproxyapi-auth"]`
+- Provider ID remains **`cliproxy`**. Existing `auth.json` entries do not need to change.
+- The GitHub repository is still `GRomR1/opencode-cliproxiapi-auth` until maintainers rename it; redirects will apply after a rename. `package.json` `repository` / `homepage` / `bugs` URLs intentionally keep the current GitHub name until then.
+
+Migration: replace the plugin package specifier only.
 
 ## Features
 
@@ -28,25 +39,25 @@ Connect OpenCode to a running CLIProxyAPI instance (local or remote), authentica
 
 ### From npm
 
-Published: [opencode-cliproxiapi-auth](https://www.npmjs.com/package/opencode-cliproxiapi-auth)
+Published: [opencode-cliproxyapi-auth](https://www.npmjs.com/package/opencode-cliproxyapi-auth)
 
 ```bash
-npm install opencode-cliproxiapi-auth
+npm install opencode-cliproxyapi-auth
 ```
 
 Add to `opencode.json`:
 
 ```json
 {
-  "plugin": ["opencode-cliproxiapi-auth"]
+  "plugin": ["opencode-cliproxyapi-auth"]
 }
 ```
 
 ### Local development
 
 ```bash
-git clone https://github.com/GRomR1/opencode-cliproxiapi-auth.git
-cd opencode-cliproxiapi-auth
+git clone https://github.com/GRomR1/opencode-cliproxiapi-auth.git opencode-cliproxyapi-auth
+cd opencode-cliproxyapi-auth
 npm install
 npm run build
 ```
@@ -55,7 +66,7 @@ In your project's `opencode.json`:
 
 ```json
 {
-  "plugin": ["file:///absolute/path/to/opencode-cliproxiapi-auth/dist/index.js"]
+  "plugin": ["file:///absolute/path/to/opencode-cliproxyapi-auth/dist/index.js"]
 }
 ```
 
@@ -110,7 +121,7 @@ Optional settings in `opencode.json`:
 
 ```json
 {
-  "plugin": ["opencode-cliproxiapi-auth"],
+  "plugin": ["opencode-cliproxyapi-auth"],
   "provider": {
     "cliproxy": {
       "options": {
@@ -200,7 +211,7 @@ import {
   refreshModels,
   CLIPROXY_PROVIDER_ID,
   CLIPROXY_ENDPOINTS,
-} from 'opencode-cliproxiapi-auth/runtime';
+} from 'opencode-cliproxyapi-auth/runtime';
 
 const config = {
   baseUrl: 'http://localhost:8317/v1',
@@ -252,20 +263,20 @@ Workflow: `.github/workflows/publish.yml` (triggers: tag `v*`, GitHub Release, m
 ### One-time setup (npm trusted publisher)
 
 1. Log in to [npmjs.com](https://www.npmjs.com/) as [gromr1](https://www.npmjs.com/~gromr1).
-2. Open package settings for `opencode-cliproxiapi-auth` (after first publish) **or** account publishing settings before the first release.
+2. Open package settings for `opencode-cliproxyapi-auth` (after first publish) **or** account publishing settings before the first release.
 3. Section **Trusted publishing** → **GitHub Actions**.
 4. Configure **exactly** (case-sensitive):
 
 | Field | Value |
 |-------|-------|
 | Organization or user | `GRomR1` (exact GitHub casing — npm is case-sensitive) |
-| Repository | `opencode-cliproxiapi-auth` |
+| Repository | `opencode-cliproxyapi-auth` (after GitHub rename) or current `opencode-cliproxiapi-auth` until then |
 | Workflow filename | `publish.yml` |
 | Allowed actions | `npm publish` |
 
 5. Save. npm does not validate until the first publish attempt — double-check spelling.
 
-`package.json` → `repository.url` must use the same casing as GitHub (`git+https://github.com/GRomR1/opencode-cliproxiapi-auth.git`).
+`package.json` → `repository.url` must match the current GitHub repository name/casing (today: `git+https://github.com/GRomR1/opencode-cliproxiapi-auth.git`). Update it when maintainers rename the repo.
 
 Optional hardening after verified publish: package **Settings → Publishing access → Require 2FA and disallow tokens**, then revoke old automation tokens.
 
@@ -288,7 +299,7 @@ CI uses `actions/checkout@v6`, `actions/setup-node@v6`, Node 24. The workflow ru
 
 ```bash
 npm pack
-tar -tf opencode-cliproxiapi-auth-*.tgz
+tar -tf opencode-cliproxyapi-auth-*.tgz
 ```
 
 ### Integration tests (live CLIProxyAPI)
@@ -348,7 +359,7 @@ Registry enrichment is on by default (CLIProxyAPI GitHub `models.json`). If you 
 ### Stale model list
 
 ```typescript
-import { clearModelCache } from 'opencode-cliproxiapi-auth/runtime';
+import { clearModelCache } from 'opencode-cliproxyapi-auth/runtime';
 clearModelCache();
 ```
 
